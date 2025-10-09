@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  icon        String
+  products    Product[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String
+  description      String
+  longDescription  String?  @map("long_description")
+  image            String?
+  stockOut         Boolean  @default(false) @map("stock_out")
+  category         Category @relation(fields: [categoryId], references: [id])
+  categoryId       String
+  pricing          Pricing[]
+  reviews          Review[]
+  orderItems       OrderItem[]
+  hotDeals         HotDeal[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([categoryId, slug])
+}
+
+model Pricing {
+  id        String   @id @default(cuid())
+  duration  String
+  price     Float
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  name      String
+  rating    Int
+  comment   String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Coupon {
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  discountPercentage  Float    @map("discount_percentage")
+  scope               String?  // all_products, category, single_product
+  scopeValue          String?  @map("scope_value")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model HotDeal {
+  id        String   @id @default(cuid())
+  productId String
+  customTitle String? @map("custom_title")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  orderId     String      @unique @map("order_id")
+  customerInfo Json       @map("customer_info")
+  paymentInfo Json       @map("payment_info")
+  totals      Json
+  status      String      @default("Pending")
+  coupon      Json?
+  items       OrderItem[]
+  createdAt   DateTime    @default(now()) @map("order_date")
+  updatedAt   DateTime    @updatedAt
+}
+
+model OrderItem {
+  id          String @id @default(cuid())
+  orderId     String @map("order_id")
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   String
+  name        String
+  quantity    Int
+  pricing     Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteConfig {
+  id                   String   @id @default(cuid())
+  heroBanner           Json     @map("hero_banner")
+  favicon              String?
+  contactInfo          Json     @map("contact_info")
+  adminPassword        String   @map("admin_password")
+  usdToBdtRate         Float    @default(110) @map("usd_to_bdt_rate")
+  siteLogo             String?  @map("site_logo")
+  heroSliderInterval   Int      @default(5000) @map("hero_slider_interval")
+  hotDealsSpeed        Int      @default(40) @map("hot_deals_speed")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
