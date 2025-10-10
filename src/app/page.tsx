@@ -81,18 +81,14 @@ export default function HomePage() {
     };
 
     fetchData();
-  }, [setProducts, setCategories, setSiteConfig, setCoupons, setHotDeals]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <i className="fas fa-spinner animate-spin text-4xl text-[var(--primary-color)]"></i>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+    // Force show content after 5 seconds even if loading fails
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="bg-gray-50 flex flex-col min-h-screen">
