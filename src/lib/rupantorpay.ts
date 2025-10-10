@@ -5,13 +5,13 @@ interface RupantorPaymentRequest {
   success_url: string;
   cancel_url: string;
   webhook_url?: string;
-  meta_data?: Record<string, any>; // Changed back to meta_data as per documentation table
+  metadata?: Record<string, any>; // Correct field name is metadata, not meta_data
 }
 
 interface RupantorPaymentResponse {
-  status: boolean | number; // Documentation shows status as 1 (number) for success
+  status: number | boolean; // Documentation shows status as 1 (number) for success
   message: string;
-  payment_url?: string;
+  payment_url: string; // Made required as successful responses should always have payment_url
 }
 
 interface RupantorVerifyRequest {
@@ -44,9 +44,22 @@ class RupantorPayService {
     // Use the provided API key
     this.apiKey = 'MEg5dK0kih7ERNCo0zjZqHNuD58oXWTtnVNGyA8DDN34rrFZx5';
     this.isTestMode = process.env.NODE_ENV !== 'production';
-    // RupantorPay uses the same URL for both sandbox and production
-    // The behavior is determined by the API key
-    this.baseUrl = 'https://payment.rupantorpay.com/api/payment';
+    
+    // Use different endpoints for test vs production
+    if (this.isTestMode) {
+      // Sandbox environment for testing
+      this.baseUrl = 'https://payment.rupantorpay.com/api/payment';
+      console.log('🧪 RupantorPay running in TEST/SANDBOX mode');
+    } else {
+      // Production environment
+      this.baseUrl = 'https://payment.rupantorpay.com/api/payment';
+      console.log('💳 RupantorPay running in PRODUCTION mode');
+    }
+
+    console.log('⚠️ IMPORTANT: RupantorPay may have hardcoded redirects to submonth.com');
+    console.log('🔗 If redirects don\'t work locally, test these URLs manually:');
+    console.log('   Cancel: http://localhost:3000/payment/cancel?transaction_id=TEST&order_id=TEST&amount=1&fullname=Test');
+    console.log('   Success: http://localhost:3000/payment/success?transaction_id=TEST&order_id=TEST&amount=1&fullname=Test');
   }
 
   async createPayment(paymentData: RupantorPaymentRequest): Promise<RupantorPaymentResponse> {
@@ -54,7 +67,8 @@ class RupantorPayService {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apiKey,
-        'X-CLIENT': 'localhost' // In production, this should be the actual domain
+        'X-CLIENT': 'localhost', // Try without port
+        'X-TEST-MODE': this.isTestMode ? 'true' : 'false' // Indicate test mode
       };
 
       console.log('Creating payment with data:', JSON.stringify(paymentData, null, 2));
@@ -66,12 +80,29 @@ class RupantorPayService {
         body: JSON.stringify(paymentData)
       });
 
+      console.log('Raw response status:', response.status);
+      console.log('Raw response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('HTTP Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
       console.log('Payment response:', data);
+      console.log('Response status:', response.status);
+      console.log('Payment URL exists:', !!data.payment_url);
+      console.log('Payment URL value:', data.payment_url);
       
-      // Check for error response (status: false)
-      if (data.status === false) {
+      // Check for error response (status: false, 0, or "error")
+      if (data.status === false || data.status === 0 || data.status === 'error') {
         throw new Error(data.message || 'Failed to create payment');
+      }
+
+      // Validate that payment_url is present for successful responses
+      if (!data.payment_url) {
+        throw new Error(`Payment URL not found in response. Full response: ${JSON.stringify(data)}`);
       }
 
       return data;
@@ -111,8 +142,11 @@ class RupantorPayService {
     }
   }
 
-  getPaymentUrl(paymentResponse: RupantorPaymentResponse): string | null {
-    return paymentResponse.payment_url || null;
+  getPaymentUrl(paymentResponse: RupantorPaymentResponse): string {
+    if (!paymentResponse.payment_url) {
+      throw new Error('Payment URL is missing from response');
+    }
+    return paymentResponse.payment_url;
   }
 
   isPaymentSuccessful(verifyResponse: RupantorVerifyResponse): boolean {

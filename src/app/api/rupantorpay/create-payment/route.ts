@@ -15,20 +15,24 @@ export async function POST(request: NextRequest) {
 
     if (!fullname || !email || !amount || !orderId) {
       return NextResponse.json(
-        { error: 'Missing required fields: fullname, email, amount, orderId' },
+        { 
+          status: false,
+          message: 'Missing required fields: fullname, email, amount, orderId' 
+        },
         { status: 400 }
       );
     }
 
-    // Create payment request
+    // Create payment request - Use multiple redirect strategies
+    const baseUrl = 'http://localhost:3000';
     const paymentData = {
       fullname,
       email,
-      amount: rupantorPayService.formatAmount(amount),
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/payment/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/payment/cancel`,
-      webhook_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/rupantorpay/webhook`,
-      meta_data: { // Changed back to meta_data as per documentation table
+      amount: rupantorPayService.formatAmount(amount), // Use formatted string as per documentation
+      success_url: `${baseUrl}/payment-success`,
+      cancel_url: `${baseUrl}/payment-cancelled`,
+      webhook_url: `${baseUrl}/api/rupantorpay/webhook`,
+      metadata: { // Correct field name is metadata, not meta_data
         orderId,
         customerInfo,
         items,
@@ -36,20 +40,33 @@ export async function POST(request: NextRequest) {
       }
     };
 
+    console.log('🔗 Redirect URLs being sent to RupantorPay:');
+    console.log('Success URL:', `${baseUrl}/payment-success`);
+    console.log('Cancel URL:', `${baseUrl}/payment-cancelled`);
+    console.log('Webhook URL:', `${baseUrl}/api/rupantorpay/webhook`);
+    console.log('💡 Backup strategy: If RupantorPay still redirects to submonth.com, the redirect handlers will catch it.');
+
     const paymentResponse = await rupantorPayService.createPayment(paymentData);
     
-    return NextResponse.json({
-      success: true,
+    // Return the exact response format from RupantorPay API
+    // Add both payment_url and paymentUrl for frontend compatibility
+    const response = {
+      status: paymentResponse.status, // Use the actual status from API (should be 1 for success)
+      message: paymentResponse.message,
       payment_url: paymentResponse.payment_url,
-      message: paymentResponse.message
-    });
+      paymentUrl: paymentResponse.payment_url // Add camelCase version for frontend compatibility
+    };
+    
+    return NextResponse.json(response);
 
   } catch (error: any) {
     console.error('Create payment error:', error);
+    
+    // Return error in the same format as RupantorPay API
     return NextResponse.json(
       { 
-        error: 'Failed to create payment',
-        message: error.message || 'Unknown error occurred'
+        status: false,
+        message: error.message || 'Failed to create payment'
       },
       { status: 500 }
     );

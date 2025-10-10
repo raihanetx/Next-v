@@ -8,25 +8,25 @@ export async function POST(request: NextRequest) {
 
     if (!transaction_id) {
       return NextResponse.json(
-        { error: 'Missing required field: transaction_id' },
+        { 
+          status: false,
+          message: 'Missing required field: transaction_id' 
+        },
         { status: 400 }
       );
     }
 
     const verificationResponse = await rupantorPayService.verifyPayment(transaction_id);
     
-    return NextResponse.json({
-      success: true,
-      data: verificationResponse,
-      isCompleted: rupantorPayService.isPaymentSuccessful(verificationResponse)
-    });
+    // Return the exact response format from RupantorPay API
+    return NextResponse.json(verificationResponse);
 
   } catch (error: any) {
     console.error('Verify payment error:', error);
     return NextResponse.json(
       { 
-        error: 'Failed to verify payment',
-        message: error.message || 'Unknown error occurred'
+        status: false,
+        message: error.message || 'Failed to verify payment'
       },
       { status: 500 }
     );

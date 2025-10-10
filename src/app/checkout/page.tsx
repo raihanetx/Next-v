@@ -95,17 +95,8 @@ export default function CheckoutPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Load RupantorPay checkout script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://rupantorpay.com/public/assets/js/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+  // Removed RupantorPay script loading due to browser compatibility issues
+  // The script uses deprecated navigator APIs causing warnings in modern browsers
 
   const getProductById = (productId: string) => {
     return productsMap.get(productId);
@@ -275,20 +266,53 @@ export default function CheckoutPage() {
 
       if (response.ok) {
         const result = await response.json();
+        console.log('Frontend received API response:', result);
         
-        if (result.success && result.payment_url) {
-          // Open RupantorPay checkout
-          if (typeof window !== 'undefined' && (window as any).rupantorpayCheckOut) {
-            (window as any).rupantorpayCheckOut(result.payment_url);
-          } else {
-            // Fallback to redirect
-            window.location.href = result.payment_url;
+        // Check for payment URL in both formats (payment_url or paymentUrl)
+        const paymentUrl = result.payment_url || result.paymentUrl;
+        console.log('Extracted payment URL:', paymentUrl);
+        console.log('Response status:', result.status);
+        console.log('Status type:', typeof result.status);
+        
+        // Check for success status (API returns true for success, not 1)
+        if ((result.status === true || result.status === 1) && paymentUrl) {
+          console.log('Payment URL received:', paymentUrl);
+          
+          // Due to RupantorPay script compatibility issues with modern browsers,
+          // we'll open the payment URL directly in a new tab
+          console.log('Opening payment URL directly due to script compatibility issues...');
+          
+          try {
+            // Open in new tab to avoid leaving the current page
+            const paymentWindow = window.open(paymentUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            
+            // Check if popup was blocked
+            if (!paymentWindow || paymentWindow.closed || typeof paymentWindow.closed === 'undefined') {
+              // Fallback: open in same tab
+              console.warn('Popup blocked, opening in same tab');
+              window.location.href = paymentUrl;
+            } else {
+              console.log('Payment window opened successfully');
+              // Focus on the payment window
+              paymentWindow.focus();
+            }
+          } catch (error) {
+            console.error('Error opening payment window:', error);
+            // Final fallback: redirect in same tab
+            window.location.href = paymentUrl;
           }
         } else {
+          console.error('Payment validation failed:', {
+            status: result.status,
+            statusType: typeof result.status,
+            hasPaymentUrl: !!paymentUrl,
+            paymentUrl: paymentUrl
+          });
           alert(`Failed to generate payment URL: ${result.message || 'Unknown error'}`);
         }
       } else {
         const errorData = await response.json();
+        console.error('API request failed:', errorData);
         alert(`Payment initialization failed: ${errorData.message || 'Unknown error'}`);
       }
     } catch (error: any) {
@@ -298,6 +322,8 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Removed waitForRupantorScript function as we're not using the RupantorPay script anymore
 
   const processManualOrder = async () => {
     setIsSubmitting(true);

@@ -187,16 +187,69 @@ export async function seedDatabase() {
   try {
     console.log('Seeding database...');
 
-    // Clear existing data
-    await db.hotDeal.deleteMany();
-    await db.coupon.deleteMany();
-    await db.orderItem.deleteMany();
-    await db.order.deleteMany();
-    await db.review.deleteMany();
-    await db.pricing.deleteMany();
-    await db.product.deleteMany();
-    await db.category.deleteMany();
-    await db.siteConfig.deleteMany();
+    // Clear existing data - but handle cases where tables don't exist
+    try {
+      await db.hotDeal.deleteMany();
+      console.log('Cleared hot deals');
+    } catch (error) {
+      console.log('HotDeal table might not exist yet, continuing...');
+    }
+    
+    try {
+      await db.coupon.deleteMany();
+      console.log('Cleared coupons');
+    } catch (error) {
+      console.log('Coupon table might not exist yet, continuing...');
+    }
+    
+    try {
+      await db.orderItem.deleteMany();
+      console.log('Cleared order items');
+    } catch (error) {
+      console.log('OrderItem table might not exist yet, continuing...');
+    }
+    
+    try {
+      await db.order.deleteMany();
+      console.log('Cleared orders');
+    } catch (error) {
+      console.log('Order table might not exist yet, continuing...');
+    }
+    
+    try {
+      await db.review.deleteMany();
+      console.log('Cleared reviews');
+    } catch (error) {
+      console.log('Review table might not exist yet, continuing...');
+    }
+    
+    try {
+      await db.pricing.deleteMany();
+      console.log('Cleared pricing');
+    } catch (error) {
+      console.log('Pricing table might not exist yet, continuing...');
+    }
+    
+    try {
+      await db.product.deleteMany();
+      console.log('Cleared products');
+    } catch (error) {
+      console.log('Product table might not exist yet, continuing...');
+    }
+    
+    try {
+      await db.category.deleteMany();
+      console.log('Cleared categories');
+    } catch (error) {
+      console.log('Category table might not exist yet, continuing...');
+    }
+    
+    try {
+      await db.siteConfig.deleteMany();
+      console.log('Cleared site config');
+    } catch (error) {
+      console.log('SiteConfig table might not exist yet, continuing...');
+    }
 
     // Create categories
     const createdCategories = await Promise.all(
