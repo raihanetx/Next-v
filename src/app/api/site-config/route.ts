@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { hashPassword } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -7,6 +8,9 @@ export async function GET() {
     
     // If no config exists, create default one
     if (!config) {
+      // Hash the default admin password
+      const hashedPassword = await hashPassword("password123");
+      
       config = await db.siteConfig.create({
         data: {
           heroBanner: [],
@@ -16,7 +20,7 @@ export async function GET() {
             whatsapp: "",
             email: ""
           },
-          adminPassword: "password123",
+          adminPassword: hashedPassword,
           usdToBdtRate: 110,
           siteLogo: "",
           heroSliderInterval: 5000,

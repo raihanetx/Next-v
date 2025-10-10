@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { hashPassword } from '@/lib/auth';
 
 const sampleCategories = [
   {
@@ -288,8 +289,15 @@ export async function seedDatabase() {
 
     // Create site config
     console.log('⚙️ Creating site configuration...');
+    
+    // Hash the admin password before storing
+    const hashedAdminPassword = await hashPassword(sampleSiteConfig.adminPassword);
+    
     const createdConfig = await db.siteConfig.create({
-      data: sampleSiteConfig
+      data: {
+        ...sampleSiteConfig,
+        adminPassword: hashedAdminPassword
+      }
     });
 
     console.log('✅ Created site config');
