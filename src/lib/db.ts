@@ -4,17 +4,14 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Hardcoded Neon database URL for production deployment
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_xTdKREGCMq56@ep-fragrant-block-a1zra3ey-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+// Set DATABASE_URL for production if not provided
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://neondb_owner:npg_xTdKREGCMq56@ep-fragrant-block-a1zra3ey-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+}
 
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
-    datasources: {
-      db: {
-        url: DATABASE_URL
-      }
-    },
     log: process.env.NODE_ENV === 'development' ? ['query'] : false,
   })
 
