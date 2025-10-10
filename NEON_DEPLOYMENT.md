@@ -36,8 +36,7 @@ node prisma/seed-postgres.js
 In your Vercel project settings, add:
 ```
 DATABASE_URL=postgresql://neondb_owner:npg_xTdKREGCMq56@ep-fragrant-block-a1zra3ey-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-RUPANTORPAY_API_KEY=your_api_key
-RUPANTORPAY_MERCHANT_ID=SUBMONTH6629
+RUPANTORPAY_API_KEY=MEg5dK0kih7ERNCo0zjZqHNuD58oXWTtnVNGyA8DDN34rrFZx5
 ```
 
 ### 2. Deploy to Vercel

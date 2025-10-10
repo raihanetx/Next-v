@@ -41,8 +41,8 @@ class RupantorPayService {
   private isTestMode: boolean;
 
   constructor() {
-    // Use the provided API key
-    this.apiKey = 'MEg5dK0kih7ERNCo0zjZqHNuD58oXWTtnVNGyA8DDN34rrFZx5';
+    // Use the API key from environment variables
+    this.apiKey = process.env.RUPANTORPAY_API_KEY || 'MEg5dK0kih7ERNCo0zjZqHNuD58oXWTtnVNGyA8DDN34rrFZx5';
     this.isTestMode = process.env.NODE_ENV !== 'production';
     
     // Use different endpoints for test vs production
@@ -56,10 +56,10 @@ class RupantorPayService {
       console.log('💳 RupantorPay running in PRODUCTION mode');
     }
 
-    console.log('⚠️ IMPORTANT: RupantorPay may have hardcoded redirects to submonth.com');
+    console.log('⚠️ IMPORTANT: RupantorPay will redirect to submonth.com');
     console.log('🔗 If redirects don\'t work locally, test these URLs manually:');
-    console.log('   Cancel: http://localhost:3000/payment/cancel?transaction_id=TEST&order_id=TEST&amount=1&fullname=Test');
-    console.log('   Success: http://localhost:3000/payment/success?transaction_id=TEST&order_id=TEST&amount=1&fullname=Test');
+    console.log('   Cancel: https://submonth.com/payment/cancel?transaction_id=TEST&order_id=TEST&amount=1&fullname=Test');
+    console.log('   Success: https://submonth.com/payment/success?transaction_id=TEST&order_id=TEST&amount=1&fullname=Test');
   }
 
   async createPayment(paymentData: RupantorPaymentRequest): Promise<RupantorPaymentResponse> {
@@ -67,7 +67,7 @@ class RupantorPayService {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'X-API-KEY': this.apiKey,
-        'X-CLIENT': 'localhost', // Try without port
+        'X-CLIENT': 'submonth.com', // Your domain name
         'X-TEST-MODE': this.isTestMode ? 'true' : 'false' // Indicate test mode
       };
 
