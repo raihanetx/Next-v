@@ -3,6 +3,10 @@ import { setupSocket } from '@/lib/socket';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import next from 'next';
+import { config } from 'dotenv';
+
+// Load environment variables from .env file
+config();
 
 const dev = process.env.NODE_ENV !== 'production';
 const currentPort = 3000;
