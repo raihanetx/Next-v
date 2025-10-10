@@ -166,6 +166,11 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'submonth-storage',
+      storage: typeof window !== 'undefined' ? localStorage : {
+        getItem: () => null,
+        setItem: () => {},
+        removeItem: () => {},
+      },
       partialize: (state) => ({
         currency: state.currency,
         cart: state.cart,

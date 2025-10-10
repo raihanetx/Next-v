@@ -11,9 +11,39 @@ import HotDealsSection from '@/components/HotDealsSection';
 import ProductsSection from '@/components/ProductsSection';
 import FeaturesSection from '@/components/FeaturesSection';
 import ReviewSection from '@/components/ReviewSection';
+import ClientOnly from '@/components/ClientOnly';
 import { useAppStore } from '@/lib/store';
 
 export default function HomePage() {
+  return (
+    <ClientOnly fallback={<HomePageSkeleton />}>
+      <HomePageContent />
+    </ClientOnly>
+  );
+}
+
+function HomePageSkeleton() {
+  return (
+    <div className="bg-gray-50 flex flex-col min-h-screen">
+      <div className="animate-pulse">
+        <div className="h-16 bg-gray-200"></div>
+        <div className="container mx-auto px-4 py-4">
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+        <div className="container mx-auto px-4 py-8">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-48 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomePageContent() {
   const {
     products,
     categories,
@@ -105,19 +135,27 @@ export default function HomePage() {
         <HotDealsSection />
 
         {/* Products by Category */}
-        {Object.entries(productsByCategory).map(([categoryName, categoryProducts]) => {
-          const category = categories.find((c) => c.name === categoryName);
-          if (!category) return null;
+        {Object.entries(productsByCategory).length > 0 ? (
+          Object.entries(productsByCategory).map(([categoryName, categoryProducts]) => {
+            const category = categories.find((c) => c.name === categoryName);
+            if (!category) return null;
 
-          return (
-            <ProductsSection
-              key={categoryName}
-              categoryName={categoryName}
-              products={categoryProducts.slice(0, 5)} // Show first 5 products
-              categorySlug={category.slug}
-            />
-          );
-        })}
+            return (
+              <ProductsSection
+                key={categoryName}
+                categoryName={categoryName}
+                products={categoryProducts.slice(0, 5)} // Show first 5 products
+                categorySlug={category.slug}
+              />
+            );
+          })
+        ) : (
+          <div className="container mx-auto px-4 py-8">
+            <p className="text-center text-gray-500">
+              {products.length === 0 ? 'No products available' : 'No categories available'}
+            </p>
+          </div>
+        )}
 
         <FeaturesSection />
 
