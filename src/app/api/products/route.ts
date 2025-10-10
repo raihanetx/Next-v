@@ -3,6 +3,23 @@ import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
+    // Auto-seed database if empty (for first deployment)
+    const productCount = await db.product.count();
+    if (productCount === 0) {
+      console.log('🌱 Database empty - Auto-seeding products...');
+      try {
+        const seedResponse = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/seed`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (seedResponse.ok) {
+          console.log('✅ Auto-seeding completed');
+        }
+      } catch (seedError) {
+        console.error('❌ Auto-seeding failed:', seedError);
+      }
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const category = searchParams.get('category');
