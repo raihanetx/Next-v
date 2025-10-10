@@ -3,17 +3,46 @@ import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check database connection first
+    try {
+      await db.$connect();
+    } catch (dbError) {
+      console.error('Database connection failed:', dbError);
+      return NextResponse.json(
+        { error: 'Database connection failed. Please try again later.' },
+        { status: 503 }
+      );
+    }
+
     // Auto-seed database if empty (for first deployment)
-    const productCount = await db.product.count();
+    let productCount = 0;
+    try {
+      productCount = await db.product.count();
+    } catch (countError) {
+      console.error('Error counting products:', countError);
+      // Try to seed database if it might be empty
+      productCount = 0;
+    }
+    
     if (productCount === 0) {
       console.log('🌱 Database empty - Auto-seeding products...');
       try {
-        const seedResponse = await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/seed`, {
+        const baseUrl = process.env.VERCEL_URL 
+          ? `https://${process.env.VERCEL_URL}` 
+          : process.env.NEXTAUTH_URL 
+          ? process.env.NEXTAUTH_URL
+          : 'http://localhost:3000';
+        
+        const seedResponse = await fetch(`${baseUrl}/api/seed`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
         if (seedResponse.ok) {
           console.log('✅ Auto-seeding completed');
+          // Wait a moment for data to be properly saved
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          console.error('❌ Auto-seeding failed with status:', seedResponse.status);
         }
       } catch (seedError) {
         console.error('❌ Auto-seeding failed:', seedError);
@@ -83,14 +112,19 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch products' },
+      { error: 'Failed to fetch products', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
+  } finally {
+    // Always disconnect to prevent connection leaks
+    await db.$disconnect().catch(console.error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await db.$connect();
+    
     const body = await request.json();
     const { name, slug, description, longDescription, image, stockOut, categoryId, pricing } = body;
 
@@ -118,8 +152,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating product:', error);
     return NextResponse.json(
-      { error: 'Failed to create product' },
+      { error: 'Failed to create product', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
+  } finally {
+    await db.$disconnect().catch(console.error);
   }
 }

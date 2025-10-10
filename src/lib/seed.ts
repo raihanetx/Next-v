@@ -184,74 +184,39 @@ const sampleSiteConfig = {
 };
 
 export async function seedDatabase() {
+  let connected = false;
   try {
-    console.log('Seeding database...');
+    // Ensure database connection
+    await db.$connect();
+    connected = true;
+    console.log('✅ Database connected successfully');
+
+    console.log('🌱 Starting database seeding...');
 
     // Clear existing data - but handle cases where tables don't exist
-    try {
-      await db.hotDeal.deleteMany();
-      console.log('Cleared hot deals');
-    } catch (error) {
-      console.log('HotDeal table might not exist yet, continuing...');
-    }
-    
-    try {
-      await db.coupon.deleteMany();
-      console.log('Cleared coupons');
-    } catch (error) {
-      console.log('Coupon table might not exist yet, continuing...');
-    }
-    
-    try {
-      await db.orderItem.deleteMany();
-      console.log('Cleared order items');
-    } catch (error) {
-      console.log('OrderItem table might not exist yet, continuing...');
-    }
-    
-    try {
-      await db.order.deleteMany();
-      console.log('Cleared orders');
-    } catch (error) {
-      console.log('Order table might not exist yet, continuing...');
-    }
-    
-    try {
-      await db.review.deleteMany();
-      console.log('Cleared reviews');
-    } catch (error) {
-      console.log('Review table might not exist yet, continuing...');
-    }
-    
-    try {
-      await db.pricing.deleteMany();
-      console.log('Cleared pricing');
-    } catch (error) {
-      console.log('Pricing table might not exist yet, continuing...');
-    }
-    
-    try {
-      await db.product.deleteMany();
-      console.log('Cleared products');
-    } catch (error) {
-      console.log('Product table might not exist yet, continuing...');
-    }
-    
-    try {
-      await db.category.deleteMany();
-      console.log('Cleared categories');
-    } catch (error) {
-      console.log('Category table might not exist yet, continuing...');
-    }
-    
-    try {
-      await db.siteConfig.deleteMany();
-      console.log('Cleared site config');
-    } catch (error) {
-      console.log('SiteConfig table might not exist yet, continuing...');
+    const tables = [
+      { name: 'hotDeal', model: db.hotDeal },
+      { name: 'coupon', model: db.coupon },
+      { name: 'orderItem', model: db.orderItem },
+      { name: 'order', model: db.order },
+      { name: 'review', model: db.review },
+      { name: 'pricing', model: db.pricing },
+      { name: 'product', model: db.product },
+      { name: 'category', model: db.category },
+      { name: 'siteConfig', model: db.siteConfig }
+    ];
+
+    for (const table of tables) {
+      try {
+        await table.model.deleteMany();
+        console.log(`✅ Cleared ${table.name} table`);
+      } catch (error) {
+        console.log(`⚠️ ${table.name} table might not exist yet, continuing...`);
+      }
     }
 
     // Create categories
+    console.log('📁 Creating categories...');
     const createdCategories = await Promise.all(
       sampleCategories.map(async (category) => {
         return await db.category.create({
@@ -260,9 +225,10 @@ export async function seedDatabase() {
       })
     );
 
-    console.log('Created categories:', createdCategories.length);
+    console.log(`✅ Created ${createdCategories.length} categories`);
 
     // Create products
+    console.log('🛍️ Creating products...');
     const createdProducts = await Promise.all(
       sampleProducts.map(async (product) => {
         const category = createdCategories.find(c => c.name === product.categoryName);
@@ -289,9 +255,10 @@ export async function seedDatabase() {
       })
     );
 
-    console.log('Created products:', createdProducts.length);
+    console.log(`✅ Created ${createdProducts.length} products`);
 
     // Create coupons
+    console.log('🎫 Creating coupons...');
     const createdCoupons = await Promise.all(
       sampleCoupons.map(async (coupon) => {
         return await db.coupon.create({
@@ -300,9 +267,10 @@ export async function seedDatabase() {
       })
     );
 
-    console.log('Created coupons:', createdCoupons.length);
+    console.log(`✅ Created ${createdCoupons.length} coupons`);
 
     // Create hot deals
+    console.log('🔥 Creating hot deals...');
     const hotDealsToCreate = createdProducts.slice(0, 4).map((product, index) => ({
       productId: product.id,
       customTitle: index === 0 ? 'Special Deal!' : undefined
@@ -316,16 +284,18 @@ export async function seedDatabase() {
       })
     );
 
-    console.log('Created hot deals:', createdHotDeals.length);
+    console.log(`✅ Created ${createdHotDeals.length} hot deals`);
 
     // Create site config
+    console.log('⚙️ Creating site configuration...');
     const createdConfig = await db.siteConfig.create({
       data: sampleSiteConfig
     });
 
-    console.log('Created site config');
+    console.log('✅ Created site config');
 
     // Add some sample reviews
+    console.log('⭐ Adding sample reviews...');
     const sampleReviews = [
       { name: 'John Doe', rating: 5, comment: 'Excellent service! Very satisfied with the purchase.' },
       { name: 'Jane Smith', rating: 4, comment: 'Good quality products and fast delivery.' },
@@ -345,8 +315,8 @@ export async function seedDatabase() {
       })
     );
 
-    console.log('Added sample reviews');
-    console.log('Database seeded successfully!');
+    console.log('✅ Added sample reviews');
+    console.log('🎉 Database seeded successfully!');
 
     return {
       categories: createdCategories.length,
@@ -357,7 +327,12 @@ export async function seedDatabase() {
     };
 
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('❌ Error seeding database:', error);
     throw error;
+  } finally {
+    if (connected) {
+      await db.$disconnect().catch(console.error);
+      console.log('🔌 Database disconnected');
+    }
   }
 }
