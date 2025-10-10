@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -9,7 +9,7 @@ import Fab from '@/components/Fab';
 import { useAppStore } from '@/lib/store';
 import { formatPrice } from '@/lib/helpers';
 
-export default function ProductsPage() {
+function ProductsPageContent() {
   const { products, categories, setProducts, currency, siteConfig, addToCart } = useAppStore();
   const [filteredProducts, setFilteredProducts] = useState(products);
   const [productsTitle, setProductsTitle] = useState('All Products');
@@ -154,5 +154,20 @@ export default function ProductsPage() {
       <MobileNav />
       <Fab />
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-white min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    }>
+      <ProductsPageContent />
+    </Suspense>
   );
 }

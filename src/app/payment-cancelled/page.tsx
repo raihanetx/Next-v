@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function PaymentCancelledRedirect() {
+function PaymentCancelledRedirectContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -27,5 +27,20 @@ export default function PaymentCancelledRedirect() {
         <p className="text-gray-600">Redirecting to payment cancellation...</p>
       </div>
     </div>
+  );
+}
+
+export default function PaymentCancelledRedirect() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <PaymentCancelledRedirectContent />
+    </Suspense>
   );
 }
