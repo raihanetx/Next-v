@@ -1,5 +1,5 @@
 {
-  "buildCommand": "next build",
+  "buildCommand": "DATABASE_URL=postgresql://neondb_owner:npg_xTdKREGCMq56@ep-fragrant-block-a1zra3ey-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require next build",
   "installCommand": "npm install",
   "framework": "nextjs"
 }
