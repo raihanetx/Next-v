@@ -38,6 +38,7 @@ export default function AdminDashboard() {
   const [emailOrder, setEmailOrder] = useState<Order | null>(null);
   const [emailItems, setEmailItems] = useState<any[]>([]);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [fixingDatabase, setFixingDatabase] = useState(false);
   const { siteConfig } = useAppStore();
   
   const { 
@@ -61,6 +62,30 @@ export default function AdminDashboard() {
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated]);
+
+  const handleFixDatabase = async () => {
+    setFixingDatabase(true);
+    setError('');
+    
+    try {
+      const response = await fetch('/api/debug-admin', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert(`✅ Database fixed successfully!\n\n${result.message}\n\nTotal configs: ${result.totalConfigs}\nPlease try logging in again.`);
+      } else {
+        alert(`❌ Database fix failed: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`❌ Failed to fix database: ${error}`);
+    } finally {
+      setFixingDatabase(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,6 +370,21 @@ export default function AdminDashboard() {
               <Button type="submit" className="w-full" disabled={authLoading}>
                 {authLoading ? 'Signing in...' : 'Sign In'}
               </Button>
+              
+              <div className="mt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={handleFixDatabase}
+                  disabled={fixingDatabase}
+                >
+                  {fixingDatabase ? 'Fixing Database...' : '🔧 Fix Database Login'}
+                </Button>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Use this if login fails with correct password
+                </p>
+              </div>
             </form>
             
             <div className="mt-6 text-center text-sm text-gray-500">
