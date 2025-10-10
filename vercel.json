@@ -3,10 +3,5 @@
   "devCommand": "prisma generate && next dev",
   "installCommand": "npm install && prisma generate",
   "framework": "nextjs",
-  "outputDirectory": ".next",
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  "outputDirectory": ".next"
 }
